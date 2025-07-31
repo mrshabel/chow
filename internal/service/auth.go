@@ -79,6 +79,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*model
 }
 
 // forgot password
+// func (s *AuthService) ForgotPassword(ctx context.Context, email string) (string, error)
 
 // reset password
 
@@ -92,14 +93,14 @@ func (s *AuthService) generateAccessToken(user *model.User) (string, error) {
 	claims := jwt.MapClaims{
 		"sub":      user.ID.String(),
 		"username": user.Username,
-		"password": user.Password,
+		"email":    user.Email,
 		"iat":      now.Unix(),
 		"exp":      expiry.Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// sign token with secret key
-	tokenString, err := token.SignedString(s.cfg.JWTSecret)
+	tokenString, err := token.SignedString([]byte(s.cfg.JWTSecret))
 	if err != nil {
 		return "", err
 	}

@@ -2,6 +2,11 @@ package main
 
 import (
 	"chow/internal/config"
+	"chow/internal/database"
+	"chow/internal/handler"
+	"chow/internal/repository"
+	"chow/internal/router"
+	"chow/internal/service"
 	"context"
 	"fmt"
 	"log"
@@ -11,9 +16,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load()
 
 	// get config
 	cfg, err := config.New()
@@ -21,12 +28,28 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// db
+	db, err := database.New(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// repos
+	userRepo := repository.NewUserRepository(db.DB)
+
+	// services
+	authService := service.NewAuthService(cfg, userRepo)
+
+	// handlers
+	authHandler := handler.NewAuthHandler(authService)
+
 	// create server router
-	router := gin.Default()
+	r := gin.Default()
+	router.RegisterRoutes(r, authHandler)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf("localhost:%v", cfg.Port),
-		Handler:      router,
+		Handler:      r,
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,

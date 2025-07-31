@@ -4,7 +4,7 @@ Community-driven platform built to help you discover local food hot-spots closer
 
 ## Setup
 
-1. Set environment and start the database with docker
+1. Set environment and start the database with docker. A postgres instance with postgis installed is started
 
 ```bash
 # setup env

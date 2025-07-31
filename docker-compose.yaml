@@ -1,6 +1,7 @@
 services:
+    # extended postgres image with postgis
     db:
-        image: postgres:latest
+        image: postgis/postgis
         container_name: chow-db
         environment:
             POSTGRES_DB: ${DB_DATABASE}
@@ -25,3 +26,5 @@ services:
 
 networks:
     chow:
+volumes:
+    .postgres-data:

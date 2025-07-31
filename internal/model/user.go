@@ -25,8 +25,18 @@ type User struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-type CreateUserReq struct {
+type RegisterUserReq struct {
 	Email    string `json:"email" binding:"required,email"`
 	Username string `json:"username" binding:"required,gte=5"`
 	Password string `json:"password" binding:"required,gte=8"`
+}
+
+type LoginUserReq struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,gte=8"`
+}
+
+type LoginUserRes struct {
+	User        User   `json:"user"`
+	AccessToken string `json:"accessToken"`
 }
