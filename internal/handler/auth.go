@@ -20,6 +20,18 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 	}
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Authenticate user and return access token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body model.LoginUserReq true "Login credentials"
+// @Success 200 {object} model.SuccessResponse{data=model.LoginUserRes} "Login successful"
+// @Failure 401 {object} model.ErrorResponse "Invalid credentials"
+// @Failure 422 {object} model.ErrorResponse "Validation error"
+// @Failure 500 {object} model.ErrorResponse "Server error"
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	// validate data
 	var req model.LoginUserReq
@@ -44,6 +56,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Login successful", Data: res})
 }
 
+// Register godoc
+// @Summary Register new user
+// @Description Create a new user account
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body model.RegisterUserReq true "User registration details"
+// @Success 201 {object} model.SuccessResponse{data=model.User} "Account registration successful"
+// @Failure 401 {object} model.ErrorResponse "User already exists"
+// @Failure 422 {object} model.ErrorResponse "Validation error"
+// @Failure 500 {object} model.ErrorResponse "Server error"
+// @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	// validate data
 	var req model.RegisterUserReq
@@ -64,5 +88,5 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Account registration successful", Data: user})
+	c.JSON(http.StatusCreated, model.SuccessResponse{Message: "Account registration successful", Data: user})
 }

@@ -1,0 +1,598 @@
+basePath: /api
+definitions:
+  model.CreateJointReq:
+    properties:
+      description:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+      name:
+        minLength: 3
+        type: string
+    required:
+    - latitude
+    - longitude
+    - name
+    type: object
+  model.ErrorResponse:
+    properties:
+      detail: {}
+      message:
+        type: string
+    type: object
+  model.Joint:
+    properties:
+      createdAt:
+        type: string
+      creatorId:
+        type: string
+      description:
+        type: string
+      distance:
+        type: number
+      downvotes:
+        type: integer
+      id:
+        type: string
+      isApproved:
+        type: boolean
+      latitude:
+        type: number
+      longitude:
+        type: number
+      name:
+        type: string
+      photoUrl:
+        type: string
+      updatedAt:
+        type: string
+      upvotes:
+        type: integer
+    type: object
+  model.LoginUserReq:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  model.LoginUserRes:
+    properties:
+      accessToken:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
+  model.RegisterUserReq:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        minLength: 5
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  model.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  model.User:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      role:
+        $ref: '#/definitions/model.UserRole'
+      updatedAt:
+        type: string
+      username:
+        type: string
+    type: object
+  model.UserRole:
+    enum:
+    - admin
+    - moderator
+    - user
+    type: string
+    x-enum-varnames:
+    - Admin
+    - Moderator
+    - AppUser
+  model.VoteDirection:
+    enum:
+    - up
+    - down
+    type: string
+    x-enum-varnames:
+    - UpVote
+    - DownVote
+  model.VoteJointReq:
+    properties:
+      direction:
+        allOf:
+        - $ref: '#/definitions/model.VoteDirection'
+        enum:
+        - up
+        - down
+    required:
+    - direction
+    type: object
+host: localhost:8000
+info:
+  contact: {}
+  description: Community-driven platform built to help you discover local food hot-spots
+    closer to you.
+  title: Chow API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return access token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginUserReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.LoginUserRes'
+              type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Login user
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: User registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterUserReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Account registration successful
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "401":
+          description: User already exists
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Register new user
+      tags:
+      - auth
+  /joints:
+    get:
+      consumes:
+      - application/json
+      description: Get all approved food joints with pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Joints retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Joint'
+                  type: array
+              type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Get all joints
+      tags:
+      - joints
+    post:
+      consumes:
+      - application/json
+      description: Create a new food joint
+      parameters:
+      - description: Joint details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateJointReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Joint added successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Joint'
+              type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Joint already exists
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create new joint
+      tags:
+      - joints
+  /joints/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing joint (admin only)
+      parameters:
+      - description: Joint ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Joint deleted successfully
+          schema:
+            $ref: '#/definitions/model.SuccessResponse'
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: User not authorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete joint
+      tags:
+      - joints
+    get:
+      consumes:
+      - application/json
+      description: Get a single joint by ID
+      parameters:
+      - description: Joint ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Joint retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Joint'
+              type: object
+        "404":
+          description: Joint not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Get one joint
+      tags:
+      - joints
+    patch:
+      consumes:
+      - application/json
+      description: Update an existing joint's details
+      parameters:
+      - description: Joint ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated joint details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateJointReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Joint updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Joint'
+              type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: User not authorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Joint not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update joint
+      tags:
+      - joints
+  /joints/{id}/vote:
+    post:
+      consumes:
+      - application/json
+      description: Upvote or downvote a food joint
+      parameters:
+      - description: Joint ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Vote direction
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.VoteJointReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Vote already recorded
+          schema:
+            $ref: '#/definitions/model.SuccessResponse'
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Joint not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Vote on a joint
+      tags:
+      - joints
+  /joints/nearby:
+    get:
+      consumes:
+      - application/json
+      description: Get food joints near specified coordinates within radius
+      parameters:
+      - in: query
+        name: latitude
+        required: true
+        type: number
+      - in: query
+        name: longitude
+        required: true
+        type: number
+      - in: query
+        maximum: 5000
+        name: radius
+        required: true
+        type: number
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Nearby Joints retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Joint'
+                  type: array
+              type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Find nearby joints
+      tags:
+      - joints
+  /joints/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for joints by name or description
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Joints retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Joint'
+                  type: array
+              type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Search joints
+      tags:
+      - joints
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -19,6 +19,18 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// @title           Chow API
+// @version         1.0
+// @description     Community-driven platform built to help you discover local food hot-spots closer to you.
+
+// @host      localhost:8000
+// @BasePath  /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 func main() {
 	_ = godotenv.Load()
 
@@ -36,16 +48,23 @@ func main() {
 
 	// repos
 	userRepo := repository.NewUserRepository(db.DB)
+	jointRepo := repository.NewJointRepository(db.DB)
+	voteRepo := repository.NewVoteRepository(db.DB)
 
 	// services
 	authService := service.NewAuthService(cfg, userRepo)
+	jointService := service.NewJointService(cfg, jointRepo, voteRepo)
 
 	// handlers
 	authHandler := handler.NewAuthHandler(authService)
+	jointHandler := handler.NewJointHandler(jointService)
+
+	// middleware
+	middleware := handler.NewMiddleware(authService)
 
 	// create server router
 	r := gin.Default()
-	router.RegisterRoutes(r, authHandler)
+	router.RegisterRoutes(r, authHandler, jointHandler, middleware)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf("localhost:%v", cfg.Port),

@@ -94,6 +94,7 @@ func (s *AuthService) generateAccessToken(user *model.User) (string, error) {
 		"sub":      user.ID.String(),
 		"username": user.Username,
 		"email":    user.Email,
+		"role":     user.Role,
 		"iat":      now.Unix(),
 		"exp":      expiry.Unix(),
 	}
@@ -114,7 +115,7 @@ func (s *AuthService) ValidateToken(token string) (jwt.MapClaims, error) {
 		if _, ok := parsedToken.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
 		}
-		return s.cfg.JWTSecret, nil
+		return []byte(s.cfg.JWTSecret), nil
 	})
 	if err != nil {
 		// check for expiry

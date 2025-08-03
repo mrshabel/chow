@@ -22,9 +22,15 @@ type Joint struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
-type CreateJoinReq struct {
-	Name        string  `json:"email" binding:"required,ge=3"`
+type CreateJointReq struct {
+	Name        string  `json:"name" binding:"required,gte=3"`
 	Longitude   float64 `json:"longitude" binding:"required,longitude"`
 	Latitude    float64 `json:"latitude" binding:"required,latitude"`
 	Description *string `json:"description"`
+}
+
+type NearbyJointsQuery struct {
+	Radius    float64 `form:"radius" binding:"required,gt=0,lte=5000"`
+	Longitude float64 `form:"longitude" binding:"required,longitude"`
+	Latitude  float64 `form:"latitude" binding:"required,latitude"`
 }

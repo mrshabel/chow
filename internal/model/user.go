@@ -40,3 +40,10 @@ type LoginUserRes struct {
 	User        User   `json:"user"`
 	AccessToken string `json:"accessToken"`
 }
+
+// AuthenticatedUser is the minimal user info passed throughout the application for an authenticated user
+type AuthenticatedUser struct {
+	ID       uuid.UUID
+	Username string
+	Role     UserRole
+}
