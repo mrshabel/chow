@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"log"
 
 	"chow/internal/model"
 
@@ -27,7 +26,6 @@ func (r *JointRepository) GetTx(ctx context.Context) (*sql.Tx, error) {
 
 func (r *JointRepository) Create(ctx context.Context, data *model.Joint) (*model.Joint, error) {
 	var joint model.Joint
-	log.Println(*data)
 	query := `
         INSERT INTO joints(name, latitude, longitude, location, description, is_approved, creator_id, photo_url)
         VALUES ($1, $2, $3, ST_Point($4, $5), $6, $7, $8, $9)
@@ -115,7 +113,6 @@ func (r *JointRepository) GetAll(ctx context.Context, offset, limit int) ([]*mod
 		); err != nil {
 			return nil, err
 		}
-		log.Println(joint)
 		joints = append(joints, &joint)
 	}
 

@@ -11,12 +11,14 @@ import (
 )
 
 type JointHandler struct {
-	jointService *service.JointService
+	jointService     *service.JointService
+	complaintService *service.ComplaintService
 }
 
-func NewJointHandler(jointService *service.JointService) *JointHandler {
+func NewJointHandler(jointService *service.JointService, complaintService *service.ComplaintService) *JointHandler {
 	return &JointHandler{
-		jointService: jointService,
+		jointService:     jointService,
+		complaintService: complaintService,
 	}
 }
 
@@ -365,4 +367,132 @@ func (h *JointHandler) DeleteJoint(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, model.SuccessResponse{Message: "Joint deleted successfully"})
+}
+
+// CreateJointComplaint godoc
+// @Summary Create new complaint
+// @Description Create a new complaint for a given joint
+// @Tags joints
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Joint ID"
+// @Param request body model.CreateComplaintReq true "Complaint details"
+// @Success 201 {object} model.SuccessResponse{data=model.Complaint} "Complaint added successfully"
+// @Failure 401 {object} model.ErrorResponse "User not authenticated"
+// @Failure 422 {object} model.ErrorResponse "Validation error"
+// @Failure 500 {object} model.ErrorResponse "Server error"
+// @Router /joints/{id}/complaints [post]
+func (h *JointHandler) CreateJointComplaint(c *gin.Context) {
+	// validate data
+	var param model.IDParam
+	if err := c.ShouldBindUri(&param); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, model.ErrorResponse{Message: "Failed to validate joint ID", Detail: err.Error()})
+		return
+	}
+	var req model.CreateComplaintReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, model.ErrorResponse{Message: "Failed to validate data", Detail: err.Error()})
+		return
+	}
+	// get user info from auth context
+	user, ok := h.getAuthUser(c)
+	if !ok {
+		return
+	}
+
+	complaint, err := h.complaintService.CreateComplaint(c.Request.Context(), &model.Complaint{Reason: req.Reason, Status: model.OpenComplaint, UserID: user.ID, JointID: param.GetID()})
+	if err != nil {
+		if errors.Is(err, service.ErrAlreadyExist) {
+			c.JSON(http.StatusConflict, model.ErrorResponse{Message: err.Error()})
+			return
+		}
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, model.ErrorResponse{Message: "Failed to add new complaint"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, model.SuccessResponse{Message: "Complaint added successfully", Data: complaint})
+}
+
+// GetJointComplaints godoc
+// @Summary Get joint complaints
+// @Description Get all complaints for a specific joint
+// @Tags joints
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Joint ID"
+// @Param page query int false "Page number" default(1)
+// @Param pageSize query int false "Page size" default(10)
+// @Success 200 {object} model.SuccessResponse{data=[]model.Complaint} "Joint complaints retrieved successfully"
+// @Failure 401 {object} model.ErrorResponse "User not authenticated"
+// @Failure 403 {object} model.ErrorResponse "User not authorized"
+// @Failure 404 {object} model.ErrorResponse "Joint not found"
+// @Failure 422 {object} model.ErrorResponse "Validation error"
+// @Failure 500 {object} model.ErrorResponse "Server error"
+// @Router /joints/{id}/complaints [get]
+func (h *JointHandler) GetJointComplaints(c *gin.Context) {
+	var param model.IDParam
+	if err := c.ShouldBindUri(&param); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, model.ErrorResponse{
+			Message: "Failed to validate joint ID",
+			Detail:  err.Error(),
+		})
+		return
+	}
+
+	var pagination model.PaginationQuery
+	if err := c.ShouldBind(&pagination); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, model.ErrorResponse{
+			Message: "Failed to validate pagination params",
+			Detail:  err.Error(),
+		})
+		return
+	}
+
+	if _, ok := h.getAuthUser(c); !ok {
+		return
+	}
+
+	offset, limit := pagination.GetOffsetAndLimit()
+	complaints, err := h.complaintService.GetJointComplaints(c.Request.Context(), param.GetID(), offset, limit)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
+			Message: "Failed to retrieve joint complaints",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, model.SuccessResponse{
+		Message: "Joint complaints retrieved successfully",
+		Data:    complaints,
+	})
+}
+
+// getAuthUser retrieves the authenticated user or return an unauthorized error if user is not present
+func (h *JointHandler) getAuthUser(c *gin.Context) (*model.AuthenticatedUser, bool) {
+	// get user info from auth context
+	user, ok := GetCurrentUser(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, model.ErrorResponse{Message: "User not authenticated"})
+		return nil, false
+	}
+	return &user, true
+}
+
+// getAuthAdmin retrieves the authenticated user or return an unauthorized error if user is not present
+func (h *JointHandler) getAuthAdminOrModerator(c *gin.Context) (*model.AuthenticatedUser, bool) {
+	// get admin info from auth context
+	user, ok := GetCurrentAdmin(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, model.ErrorResponse{Message: "User is not authorized"})
+		return nil, false
+	}
+	if user.Role != model.Moderator && user.Role != model.Admin {
+		c.JSON(http.StatusForbidden, model.ErrorResponse{Message: "User is not an admin or moderator"})
+		return nil, false
+	}
+	return &user, true
 }

@@ -10,7 +10,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func RegisterRoutes(router *gin.Engine, authHandler *handler.AuthHandler, jointHandler *handler.JointHandler, middleware *handler.Middleware) {
+func RegisterRoutes(router *gin.Engine, authHandler *handler.AuthHandler, jointHandler *handler.JointHandler, complaintHandler *handler.ComplaintHandler, middleware *handler.Middleware) {
 	// cors
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -50,6 +50,21 @@ func RegisterRoutes(router *gin.Engine, authHandler *handler.AuthHandler, jointH
 			protectedJoints.PATCH("/:id", jointHandler.UpdateJoint)
 			protectedJoints.DELETE("/:id", jointHandler.DeleteJoint)
 			protectedJoints.POST("/:id/vote", jointHandler.VoteJoint)
+			protectedJoints.POST("/:id/complaints", jointHandler.CreateJointComplaint)
+			protectedJoints.GET("/:id/complaints", jointHandler.GetJointComplaints)
+		}
+	}
+
+	// complaints
+	complaints := apiRouter.Group("/complaints")
+	{
+		// protected
+		protectedComplaints := complaints.Use(middleware.AuthMiddleware())
+		{
+			protectedComplaints.GET("", complaintHandler.GetAllComplaints)
+			protectedComplaints.GET("/me", complaintHandler.GetUserComplaints)
+			protectedComplaints.GET("/:id", complaintHandler.GetComplaint)
+			protectedComplaints.PATCH("/:id/resolve", complaintHandler.ResolveComplaint)
 		}
 	}
 }

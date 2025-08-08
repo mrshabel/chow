@@ -9,8 +9,8 @@ import (
 type ComplaintStatus string
 
 const (
-	Open     ComplaintStatus = "open"
-	Resolved ComplaintStatus = "resolved"
+	OpenComplaint     ComplaintStatus = "open"
+	ResolvedComplaint ComplaintStatus = "resolved"
 )
 
 type Complaint struct {

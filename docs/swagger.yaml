@@ -1,5 +1,37 @@
 basePath: /api
 definitions:
+  model.Complaint:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      jointId:
+        type: string
+      reason:
+        type: string
+      status:
+        $ref: '#/definitions/model.ComplaintStatus'
+      updatedAt:
+        type: string
+      userId:
+        type: string
+    type: object
+  model.ComplaintStatus:
+    enum:
+    - open
+    - resolved
+    type: string
+    x-enum-varnames:
+    - OpenComplaint
+    - ResolvedComplaint
+  model.CreateComplaintReq:
+    properties:
+      reason:
+        type: string
+    required:
+    - reason
+    type: object
   model.CreateJointReq:
     properties:
       description:
@@ -220,6 +252,184 @@ paths:
       summary: Register new user
       tags:
       - auth
+  /complaints:
+    get:
+      consumes:
+      - application/json
+      description: Get all complaints with pagination. Admins only Endpoint
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Complaints retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Complaint'
+                  type: array
+              type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all complaints
+      tags:
+      - complaints
+  /complaints/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single complaint by ID
+      parameters:
+      - description: Complaint ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Complaint retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Complaint'
+              type: object
+        "404":
+          description: Complaint not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get one complaint
+      tags:
+      - complaints
+  /complaints/{id}/resolve:
+    patch:
+      consumes:
+      - application/json
+      description: Resolves a specific complaint. Admins-only Endpoint
+      parameters:
+      - description: Complaint ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Complaint updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Complaint'
+              type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: User not authorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Complaint not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Resolve complaint
+      tags:
+      - complaints
+  /complaints/me:
+    get:
+      consumes:
+      - application/json
+      description: Get all complaints made by the authenticated user
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User complaints retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Complaint'
+                  type: array
+              type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user complaints
+      tags:
+      - complaints
   /joints:
     get:
       consumes:
@@ -442,6 +652,111 @@ paths:
       security:
       - BearerAuth: []
       summary: Update joint
+      tags:
+      - joints
+  /joints/{id}/complaints:
+    get:
+      consumes:
+      - application/json
+      description: Get all complaints for a specific joint
+      parameters:
+      - description: Joint ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Joint complaints retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Complaint'
+                  type: array
+              type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: User not authorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Joint not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get joint complaints
+      tags:
+      - joints
+    post:
+      consumes:
+      - application/json
+      description: Create a new complaint for a given joint
+      parameters:
+      - description: Joint ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Complaint details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateComplaintReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Complaint added successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Complaint'
+              type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "422":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create new complaint
       tags:
       - joints
   /joints/{id}/vote:

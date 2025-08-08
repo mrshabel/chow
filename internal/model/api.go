@@ -19,7 +19,7 @@ type ErrorResponse struct {
 
 type PaginationQuery struct {
 	Page     int `form:"page" binding:"omitempty,gte=1"`
-	PageSize int `form:"pageSize" binding:"omitempty,gte=1,lte=1000"`
+	PageSize int `form:"pageSize" binding:"omitempty,gte=1,lte=100"`
 }
 
 func (p *PaginationQuery) GetOffsetAndLimit() (int, int) {

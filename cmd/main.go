@@ -50,21 +50,24 @@ func main() {
 	userRepo := repository.NewUserRepository(db.DB)
 	jointRepo := repository.NewJointRepository(db.DB)
 	voteRepo := repository.NewVoteRepository(db.DB)
+	complaintRepo := repository.NewComplaintRepository(db.DB)
 
 	// services
 	authService := service.NewAuthService(cfg, userRepo)
 	jointService := service.NewJointService(cfg, jointRepo, voteRepo)
+	complaintService := service.NewComplaintService(cfg, complaintRepo)
 
 	// handlers
 	authHandler := handler.NewAuthHandler(authService)
-	jointHandler := handler.NewJointHandler(jointService)
+	jointHandler := handler.NewJointHandler(jointService, complaintService)
+	complaintHandler := handler.NewComplaintHandler(complaintService)
 
 	// middleware
 	middleware := handler.NewMiddleware(authService)
 
 	// create server router
 	r := gin.Default()
-	router.RegisterRoutes(r, authHandler, jointHandler, middleware)
+	router.RegisterRoutes(r, authHandler, jointHandler, complaintHandler, middleware)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf("localhost:%v", cfg.Port),
